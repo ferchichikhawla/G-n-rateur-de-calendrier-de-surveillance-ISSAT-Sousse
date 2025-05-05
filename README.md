@@ -39,14 +39,14 @@ python manage.py runserver
 
 5. Accéder au tableau de bord administrateur à l’adresse : http://127.0.0.1:8000/dashboard/.
 
-Utilisation
+## Utilisation:
 Utilisez le tableau de bord pour téléverser les fichiers Excel des enseignants et des séances.
 
 Générez et téléchargez les emplois du temps.
 
 Affichez et téléchargez les emplois du temps individuels des enseignants.
 
-Remarques
+## Remarques:
 Assurez-vous d’avoir installé les packages Python requis (voir requirements.txt).
 
 L’intégration frontend se fait via des appels API — voir frontend-integration.md pour plus de détails.
