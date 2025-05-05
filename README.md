@@ -1,7 +1,9 @@
-##Générateur de Calendrier
+#Générateur de Calendrier:
+
 Ce projet est une application de planification basée sur Django, conçue pour gérer les affectations des enseignants et les emplois du temps des séances. Il comprend des fonctionnalités d'importation de données depuis des fichiers Excel, d'exécution d'algorithmes de planification, et d'exportation des emplois du temps en fichiers Excel ou PDF.
 
-Fonctionnalités
+##Fonctionnalités:
+
 Importation des données des enseignants et des séances via des fichiers Excel.
 
 Exécution d’un algorithme de planification pour affecter les enseignants aux séances.
