@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Teacher Assignment System</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        line-height: 1.6;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      .button-group {
+        margin: 20px 0;
+      }
+      button {
+        padding: 10px 15px;
+        margin-right: 10px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #45a049;
+      }
+      #clear-btn {
+        background-color: #f44336;
+      }
+      #clear-btn:hover {
+        background-color: #d32f2f;
+      }
+      .loading {
+        display: none;
+        margin: 10px 0;
+        color: #666;
+      }
+      .section {
+        margin-bottom: 30px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 15px;
+      }
+      .section-title {
+        font-size: 1.2em;
+        font-weight: bold;
+        margin-bottom: 10px;
+        color: #333;
+      }
+      .session-card,
+      .teacher-card {
+        border: 1px solid #eee;
+        border-radius: 4px;
+        padding: 10px;
+        margin-bottom: 10px;
+        background-color: #f9f9f9;
+      }
+      .valid {
+        color: green;
+      }
+      .invalid {
+        color: red;
+      }
+      .teacher-session {
+        margin-left: 20px;
+        font-size: 0.9em;
+        color: #555;
+      }
+      .verification-summary {
+        font-weight: bold;
+        padding: 10px;
+        margin-bottom: 10px;
+      }
+      .valid-summary {
+        background-color: #dff0d8;
+        color: #3c763d;
+      }
+      .invalid-summary {
+        background-color: #f2dede;
+        color: #a94442;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Teacher Assignment System</h1>
+
+      <div class="button-group">
+        <button id="assign-btn">Run Assignment Algorithm</button>
+        <button id="clear-btn">Clear All Assignments</button>
+      </div>
+
+      <div id="loading" class="loading">Processing, please wait...</div>
+
+      <div id="results-container">
+        <!-- Results will be inserted here -->
+      </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+      $(document).ready(function () {
+        $("#assign-btn").click(function () {
+          $("#loading").show();
+          $("#results-container").html("");
+
+          $.ajax({
+            url: "",
+            type: "POST",
+            dataType: "json",
+            headers: {
+              "X-CSRFToken": "{{ csrf_token }}",
+            },
+            success: function (data) {
+              $("#loading").hide();
+              if (data.status === "success") {
+                displayResults(data.results);
+              } else {
+                $("#results-container").html(
+                  '<div class="error">Error: ' + data.message + "</div>"
+                );
+              }
+            },
+            error: function (xhr) {
+              $("#loading").hide();
+              $("#results-container").html(
+                '<div class="error">Error: ' +
+                  (xhr.responseJSON?.message || "Unknown error occurred") +
+                  "</div>"
+              );
+            },
+          });
+        });
+
+        function displayResults(results) {
+          let html = "";
+
+          // Verification summary
+          const isValid = results.verification.all_valid;
+          html +=
+            `<div class="verification-summary ${
+              isValid ? "valid-summary" : "invalid-summary"
+            }">` +
+            `${
+              isValid
+                ? "✓ All assignments are valid!"
+                : "❌ Some issues were found in the assignments"
+            }` +
+            `</div>`;
+
+          // Sessions section
+          html += `<div class="section">
+                    <div class="section-title">Session Assignments</div>`;
+
+          results.sessions.forEach((session) => {
+            const isValid =
+              session.assigned_count >= session.min_needed &&
+              session.assigned_count <= session.max_wanted;
+
+            html +=
+              `<div class="session-card">
+                        <div><strong>${session.day} ${session.time}</strong> -  (${session.duration}h)</div>
+                        <div>Assigned: ${session.assigned_count}/${session.needed} teachers ` +
+              `<span class="${isValid ? "valid" : "invalid"}">` +
+              `(${isValid ? "Valid" : "Invalid"})</span></div>`;
+
+            if (session.assigned_teachers.length > 0) {
+              html += `<div>Teachers: ${session.assigned_teachers.join(
+                ", "
+              )}</div>`;
+            } else {
+              html += `<div>No teachers assigned</div>`;
+            }
+
+            html += `</div>`;
+          });
+
+          html += `</div>`;
+
+          // Teachers section
+          html += `<div class="section">
+                    <div class="section-title">Teacher Workloads</div>`;
+
+          results.teachers.forEach((teacher) => {
+            const isValid = teacher.assigned_hours === teacher.capacity;
+
+            html +=
+              `<div class="teacher-card">
+                        <div><strong>${teacher.name}</strong> ` +
+              `(Capacity: ${teacher.capacity}h, Assigned: ${teacher.assigned_hours}h) ` +
+              `<span class="${isValid ? "valid" : "invalid"}">` +
+              `(${
+                isValid
+                  ? "Perfect"
+                  : teacher.assigned_hours > teacher.capacity
+                  ? "Overworked"
+                  : "Underworked"
+              })</span></div>`;
+
+            if (teacher.sessions.length > 0) {
+              html += `<div class="teacher-session">Assigned sessions:`;
+              teacher.sessions.forEach((session) => {
+                html += `<div>${session.day} ${session.time}:  (${session.duration}h)</div>`;
+              });
+              html += `</div>`;
+            } else {
+              html += `<div class="teacher-session">No sessions assigned</div>`;
+            }
+
+            html += `</div>`;
+          });
+
+          html += `</div>`;
+
+          // Verification details
+          html += `<div class="section">
+                    <div class="section-title">Verification Details</div>
+                    <h3>Sessions</h3>`;
+
+          results.verification.sessions.forEach((session) => {
+            html +=
+              `<div>: ${session.assigned} teachers ` +
+              `(min ${session.min_needed}, max ${session.max_wanted}) ` +
+              `<span class="${session.valid ? "valid" : "invalid"}">` +
+              `${session.valid ? "✓" : "❌"}</span></div>`;
+          });
+
+          html += `<h3>Teachers</h3>`;
+
+          results.verification.teachers.forEach((teacher) => {
+            html +=
+              `<div>${teacher.name}: ${teacher.assigned}h/${teacher.capacity}h ` +
+              `<span class="${teacher.valid ? "valid" : "invalid"}">` +
+              `${teacher.valid ? "✓" : "❌"}</span></div>`;
+          });
+
+          html += `</div>`;
+
+          $("#results-container").html(html);
+        }
+      });
+    </script>
+  </body>
+</html>

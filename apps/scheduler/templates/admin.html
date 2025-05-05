@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+{% load static %}
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="{% static 'admin.css' %}" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+  <div class="dashboard">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="profile">
+        <div class="avatar">👤</div>
+        <h3>Admin</h3>
+        <p>Admin@gmail.com</p>
+      </div>
+      <ul class="menu">
+        <li>🏠 Home</li>
+        <li id="file-link">📁 File</li>
+        <li id="teachers-link">👩‍🏫 Teachers</li>
+      </ul>
+
+      <div class="logout-container" style="border-top: 1px solid #ccc; padding-top: 10px;">
+        <div id="help-link" style="cursor: pointer; padding: 10px 0;" >❓ Help</div>
+        <hr style="margin: 5px 0; border: 0; border-top: 1px solid #aaa;">
+        <button id="logout-btn" class="logout-button">🔓 Logout</button>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main-content">
+      <!-- File Section -->
+      <div id="file-content">
+        <div class="header">
+          <h2>File Management</h2>
+        </div>
+        <div class="charts">
+          <div class="chart-box">
+            <h4>📂 Teacher Files</h4>
+            <div class="download-section">
+              <button id="import-teacher-btn" class="download-btn">➕ Import Teacher File</button>
+              <input type="file" id="teacher-file-input" accept=".xlsx" style="display:none" />
+              <span id="teacher-import-status"></span>
+            </div>
+          </div>
+          <div class="chart-box">
+            <h4>📂 Sessions Files</h4>
+            <div class="download-section">
+              <button id="import-session-btn" class="download-btn">➕ Import Session File</button>
+              <input type="file" id="session-file-input" accept=".xlsx" style="display:none" />
+              <span id="session-import-status"></span>
+            </div>
+          </div>
+        </div>
+        <br>
+        <button id="generate-btn" class="download-btn">🛠️ Generate</button>
+        <div id="generate-status" style="margin-top: 10px; font-weight: bold;"></div>
+      </div>
+
+      <!-- Teachers Section -->
+      <div id="teachers-section" class="hidden">
+        <h2>Teachers List</h2>
+        <table id="teachers-table">
+          <thead>
+            <tr>
+              <th>Teacher's Name</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Teacher rows injected via JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <div id="help-section" class="hidden" style="background-color: #f4f6fc; padding: 40px;">
+        <h2 style="text-align: center; font-size: 32px; color: #1f2937; font-weight: bold; margin-bottom: 30px;">
+           Service Help Issat SOUSSE
+        </h2>
+      
+        <div style="display: flex; justify-content: center; gap: 30px; flex-wrap: wrap;">
+          <!-- Importation des fichiers -->
+          <div style="background: white; border-radius: 12px; padding: 25px; width: 280px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); text-align: center;">
+            <div style="font-size: 28px; color: #1d4ed8; margin-bottom: 10px;">📂</div>
+            <h3 style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">Importation des fichiers</h3>
+            <p style="font-size: 14px; color: #555;">Importer les fichiers enseignants et sessions pour générer les données automatiquement.</p>
+          </div>
+        
+          <!-- Génération automatique de calendrier -->
+          <div style="background: white; border-radius: 12px; padding: 25px; width: 280px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); text-align: center;">
+            <div style="font-size: 28px; color: #1d4ed8; margin-bottom: 10px;">🗓️</div>
+            <h3 style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">Génération automatique du calendrier</h3>
+            <p style="font-size: 14px; color: #555;">Créer automatiquement des calendriers  de surveillance des examens  à partir des fichiers importés.</p>
+          </div>
+        
+          <!-- Résultat des séances par enseignant -->
+          <div style="background: white; border-radius: 12px; padding: 25px; width: 280px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); text-align: center;">
+            <div style="font-size: 28px; color: #1d4ed8; margin-bottom: 10px;">📊</div>
+            <h3 style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">Résultat des séances</h3>
+            <p style="font-size: 14px; color: #555;">Afficher les séances générées pour chaque enseignant avec les horaires attribués.</p>
+          </div>
+        </div>
+        
+        </div>
+      </div>
+      
+      
+
+
+
+
+    </main>
+  </div>
+
+  <!-- Modal Popup -->
+  <div id="popup-modal" class="modal hidden">
+    <div class="modal-content styled-popup">
+      <span id="close-modal" class="popup-close-icon">&times;</span>
+      <h2>📥 Fichier généré</h2>
+      <p>Vous pouvez maintenant télécharger <strong>rapport_professeurs.xlsx</strong>.</p>
+      <a id="download-excel" class="popup-download" href="{% url 'test export' %}" target="_blank" download>
+        <i class="fas fa-download"></i> Télécharger .xlsx
+      </a>
+    </div>
+  </div>
+
+  <script>
+    // Get CSRF token
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+          cookie = cookie.trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+
+    // Logout
+    document.getElementById('logout-btn').addEventListener('click', () => {
+      window.electronAPI.logout();
+    });
+
+    // Teacher import
+    document.getElementById('import-teacher-btn').addEventListener('click', () => {
+      document.getElementById('teacher-file-input').click();
+    });
+
+    document.getElementById('teacher-file-input').addEventListener('change', async (event) => {
+      const file = event.target.files[0];
+      const status = document.getElementById('teacher-import-status');
+      if (!file) return;
+      status.innerText = 'Importing...';
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch('{% url "test-import" %}', {
+          method: 'POST',
+          headers: { 'X-CSRFToken': getCookie('csrftoken') },
+          body: formData
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          status.innerText = 'Import successful!';
+          await fetchAndUpdateTeachers();
+        } else {
+          status.innerText = 'Import failed: ' + (data.message || 'Unknown error');
+        }
+      } catch (error) {
+        status.innerText = 'Import failed: ' + error.message;
+      }
+    });
+
+    // Session import
+    document.getElementById('import-session-btn').addEventListener('click', () => {
+      document.getElementById('session-file-input').click();
+    });
+
+    document.getElementById('session-file-input').addEventListener('change', async (event) => {
+      const file = event.target.files[0];
+      const status = document.getElementById('session-import-status');
+      if (!file) return;
+      status.innerText = 'Importing...';
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch('{% url "test-session-import" %}', {
+          method: 'POST',
+          headers: { 'X-CSRFToken': getCookie('csrftoken') },
+          body: formData
+        });
+        const data = await res.json();
+        status.innerText = data.success ? 'Import successful!' : 'Import failed: ' + (data.status || 'Unknown error');
+      } catch (error) {
+        status.innerText = 'Import failed: ' + error.message;
+      }
+    });
+
+    // Generate schedule
+    document.getElementById('generate-btn').addEventListener('click', async () => {
+      const status = document.getElementById('generate-status');
+      status.innerText = 'Generating...';
+
+      try {
+        const res = await fetch('{% url "generate_and_export_excel" %}', {
+          method: 'POST',
+          headers: { 'X-CSRFToken': getCookie('csrftoken') }
+        });
+
+        if (res.ok) {
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'assignments.xlsx';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          status.innerText = 'Generation successful!';
+          document.getElementById('popup-modal').classList.remove('hidden');
+        } else {
+          const errorData = await res.json();
+          status.innerText = 'Generation failed: ' + (errorData.message || 'Unknown error');
+        }
+      } catch (error) {
+        status.innerText = 'Generation error: ' + error.message;
+      }
+    });
+
+    // Popup close
+    document.getElementById('close-modal').addEventListener('click', () => {
+      document.getElementById('popup-modal').classList.add('hidden');
+    });
+
+    // Section toggles
+  // HELP link
+document.getElementById('help-link').addEventListener('click', () => {
+  document.getElementById('file-content').classList.add('hidden');
+  document.getElementById('teachers-section').classList.add('hidden');
+  document.getElementById('help-section').classList.remove('hidden');
+  document.getElementById('admin-profile').classList.add('hidden'); // Masquer Admin
+});
+
+// FILE link
+document.getElementById('file-link').addEventListener('click', () => {
+  document.getElementById('teachers-section').classList.add('hidden');
+  document.getElementById('file-content').classList.remove('hidden');
+  document.getElementById('help-section').classList.add('hidden');
+  document.getElementById('admin-profile').classList.remove('hidden'); // Réafficher Admin
+});
+
+// TEACHERS link
+document.getElementById('teachers-link').addEventListener('click', () => {
+  document.getElementById('file-content').classList.add('hidden');
+  document.getElementById('teachers-section').classList.remove('hidden');
+  document.getElementById('help-section').classList.add('hidden');
+  document.getElementById('admin-profile').classList.remove('hidden'); // Réafficher Admin
+});
+
+
+    // Fetch teachers
+    async function fetchAndUpdateTeachers() {
+      try {
+        const response = await fetch('{% url "teachers_list_api" %}');
+        const teachers = await response.json();
+        const tbody = document.querySelector('#teachers-table tbody');
+        tbody.innerHTML = '';
+
+        teachers.forEach(teacher => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${teacher.name}</td>
+            <td>
+              <button class="download-btn" onclick="window.open('{% url 'export_teacher_schedule' 0 %}'.replace('0', ${teacher.id}), '_blank')">
+                🛠️ Download Schedule
+              </button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (error) {
+        console.error('Error fetching teachers:', error);
+      }
+    }
+
+  </script>
+
+  <style>
+    .hidden { display: none; }
+  </style>
+</body>
+</html>

@@ -1,0 +1,15 @@
+<!-- templates/test_upload.html -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Test Import</title>
+  </head>
+  <body>
+    <h1>Test Teacher Import</h1>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <input type="file" name="file" accept=".xlsx" />
+      <button type="submit">Upload</button>
+    </form>
+  </body>
+</html>

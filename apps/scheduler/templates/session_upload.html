@@ -1,0 +1,66 @@
+<!-- templates/test_upload.html -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Session Import</title>
+    <style>
+      .success {
+        color: green;
+      }
+      .error {
+        color: red;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Test Session Import</h1>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div>
+        <label for="file">Session Excel File:</label>
+        <input type="file" name="file" accept=".xlsx,.xls" required />
+      </div>
+      <div>
+        <label for="teacher_cols">Teacher Columns (comma separated):</label>
+        <input
+          type="text"
+          name="teacher_cols"
+          placeholder="Leave blank for auto-detection"
+        />
+      </div>
+      <button type="submit">Import</button>
+    </form>
+
+    {% if result %}
+    <h3>Imported Sessions:</h3>
+    <table border="1">
+      <thead>
+        <tr>
+          <th>Day</th>
+          <th>Time Slot</th>
+          <th>Total Needed</th>
+          <th>Besoin Sup</th>
+          <th>Responsible Teachers</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for session in result.sessions %}
+        <tr>
+          <td>{{ session.day }}</td>
+          <td>{{ session.time_slot }}</td>
+          <td>{{ session.total_number_needed }}</td>
+          <td>{{ session.number_sup_wanted }}</td>
+          <td>
+            {% for teacher in session.responsibles.all %}
+              {{ teacher.name }}{% if not forloop.last %}, {% endif %}
+            {% endfor %}
+          </td>
+          
+        </tr>
+
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+  </body>
+</html>
